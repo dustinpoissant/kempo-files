@@ -1,6 +1,6 @@
 {
   "name": "kempo-files",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "File library extension for kempo — upload, organize and serve arbitrary files through a permission-gated API",
   "license": "MIT",
   "author": "Dustin Poissant",
