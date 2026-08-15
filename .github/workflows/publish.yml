@@ -42,10 +42,6 @@ jobs:
 
       - run: npm ci
 
-      - name: Build project and documentation
-        run: |
-          npm run build
-
       # kempo/kempo-ui/kempo-server are peer dependencies and are not installed by npm ci above.
       # The published release is the right one to test against: it is what a site installing this
       # extension will actually pair it with.
