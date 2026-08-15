@@ -1,0 +1,38 @@
+{
+  "name": "kempo-files",
+  "version": "0.1.0",
+  "description": "File library extension for kempo — upload, organize and serve arbitrary files through a permission-gated API",
+  "license": "MIT",
+  "author": "Dustin Poissant",
+  "type": "module",
+  "main": "sdk.js",
+  "scripts": {
+    "test": "kempo-test -l minimal",
+    "link:local": "npm install ../kempo ../kempo-server ../kempo-ui --no-save"
+  },
+  "kempo": {
+    "public-scope": "kempo-files"
+  },
+  "exports": {
+    "./install": "./install.js",
+    "./update": "./update.js",
+    "./sdk": "./sdk.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dustinpoissant/kempo-files.git"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.2"
+  },
+  "peerDependencies": {
+    "kempo": ">=4.2.26",
+    "kempo-server": ">=3.3.0",
+    "kempo-ui": ">=0.4.53"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.10",
+    "kempo-testing-framework": "^1.4.11",
+    "postgres": "^3.4.9"
+  }
+}

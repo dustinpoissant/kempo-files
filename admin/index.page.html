@@ -1,0 +1,35 @@
+<!--
+locked: true
+-->
+<page title="Files - Admin">
+<content>
+  <script type="module" src="/kempo/components/Permission.js"></script>
+  <script type="module" src="/admin/extension/kempo-files/components/FileLibrary.js"></script>
+
+  <div class="p">
+    <h1>Files</h1>
+
+    <k-permission has="files:browse">
+      <k-files-library id="library"></k-files-library>
+    </k-permission>
+  </div>
+
+  <script type="module">
+    import { getAllCurrentUserPermissions } from '/kempo/sdk.js';
+
+    /*
+      These only decide which buttons are drawn. Every one of them is enforced again on the route
+      itself, so a hidden button is a courtesy rather than the boundary.
+    */
+    const [error, data] = await getAllCurrentUserPermissions();
+    const permissions = error ? [] : (data?.permissions || []);
+
+    const library = document.getElementById('library');
+    if(library){
+      library.canUpload = permissions.includes('files:upload');
+      library.canTrust = permissions.includes('files:upload_trusted');
+      library.canCreateDirectory = permissions.includes('directories:create');
+    }
+  </script>
+</content>
+</page>

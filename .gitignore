@@ -1,0 +1,16 @@
+node_modules
+.vscode
+.env
+.env.production
+*.log
+tests/.tmp-*
+
+# The API-contract suite installs this extension against itself (a self-referential
+# node_modules/kempo-files junction), so install.js's mkdir(cwd/files) lands here rather than in a
+# real site — harmless, but not something this repo should ever track.
+/files/
+
+# Junctions the browser-test fixtures create so absolute /kempo-ui/... and /kempo-files/sdk.js
+# imports resolve against kempo-testing-framework's static file server. Links, not content.
+/kempo-ui
+/kempo-files

@@ -1,0 +1,57 @@
+{
+  "docs": "https://github.com/dustinpoissant/kempo-files#readme",
+  "public-scope": "kempo-files",
+  "schema": "./server/db/schema.js",
+  "hooks": {
+    "route:unmatched": "./hooks/route-unmatched.js"
+  },
+  "permissions": [
+    { "name": "files:browse", "description": "List and view files in the library" },
+    { "name": "files:upload", "description": "Upload new files and replace the contents of existing ones" },
+    { "name": "files:upload_trusted", "description": "Mark a file as trusted, so it is served with its real content type and can execute in the browser" },
+    { "name": "files:download", "description": "Download files that are not marked public" },
+    { "name": "files:own:update", "description": "Rename, move, alias or edit files you uploaded" },
+    { "name": "files:own:delete", "description": "Delete files you uploaded" },
+    { "name": "files:others:update", "description": "Rename, move, alias or edit files uploaded by anyone" },
+    { "name": "files:others:delete", "description": "Delete files uploaded by anyone" },
+    { "name": "directories:create", "description": "Create folders in the file library" },
+    { "name": "directories:own:update", "description": "Rename or move folders you created" },
+    { "name": "directories:own:delete", "description": "Delete folders you created" },
+    { "name": "directories:others:update", "description": "Rename or move folders created by anyone" },
+    { "name": "directories:others:delete", "description": "Delete folders created by anyone" }
+  ],
+  "settings": [
+    { "name": "max_upload_size_mb", "value": "250", "type": "number", "description": "Maximum size, in MB, of a single uploaded file" }
+  ],
+  "groups": [
+    {
+      "name": "kempo-files:contributor",
+      "description": "Can browse, upload, and manage their own files and folders",
+      "permissions": [
+        "files:browse",
+        "files:upload",
+        "files:download",
+        "files:own:update",
+        "files:own:delete",
+        "directories:create",
+        "directories:own:update",
+        "directories:own:delete"
+      ]
+    },
+    {
+      "name": "kempo-files:trusted_uploader",
+      "description": "Everything a contributor can do, plus approving files as trusted so they execute in the browser",
+      "permissions": [
+        "files:browse",
+        "files:upload",
+        "files:upload_trusted",
+        "files:download",
+        "files:own:update",
+        "files:own:delete",
+        "directories:create",
+        "directories:own:update",
+        "directories:own:delete"
+      ]
+    }
+  ]
+}

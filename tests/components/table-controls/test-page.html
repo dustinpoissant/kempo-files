@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test</title>
+  <!--
+    admin/components/table-controls/*.js import kempo-ui via the same absolute /kempo-ui/... paths
+    kempo-server rewrites at runtime — kempo-testing-framework's own bare static server has no such
+    routing, so those requests would 404 without this. node_modules/kempo-ui is a symlink to the real
+    package (npm install of a local sibling path), so this resolves to the genuine built kempo-ui,
+    same as production, with no server of our own required.
+
+    No test-running script here on purpose: a custom `page` export only supplies markup/head content
+    — kempo-testing-framework injects its own script tag after navigating to it (see
+    runBrowserTests.js), so a competing inline script here would just race it.
+  -->
+  <script type="importmap">
+    { "imports": { "/kempo-ui/": "/node_modules/kempo-ui/dist/" } }
+  </script>
+</head>
+<body></body>
+</html>

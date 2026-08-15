@@ -1,0 +1,23 @@
+# Database for kempo-files' own test suite. kempo-demo runs on 5433 and kempo's own tests on 5434,
+# so this one uses 5436 to stay out of both their way.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: kempo-files-test-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: kempo
+      POSTGRES_PASSWORD: kempo_files_test_password
+      POSTGRES_DB: kempo_files_test
+    ports:
+      - "5436:5432"
+    volumes:
+      - postgres_files_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kempo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_files_test_data:

@@ -1,0 +1,69 @@
+<content id="kempo-files-picker" name="File picker" owner="kempo-files" enabled="true" locked="true" location="scripts" priority="0">
+<script type="module">
+  /*
+    Installs the picker kempo-ui's image control looks for. kempo core scans every enabled
+    extension's admin/ directory for *.global.html on each admin render, so this lands in the
+    scripts location of every admin page with no changes to core and no registration step.
+
+    The hook is read when the control's dropdown opens rather than at page load, so setting it here
+    is early enough regardless of which loads first.
+  */
+  import Dialog from '/kempo-ui/components/Dialog.js';
+  import { urlForFile } from '/kempo-files/sdk.js';
+  import '/admin/extension/kempo-files/components/FileLibrary.js';
+
+  window.kempo = window.kempo || {};
+
+  window.kempo.openAssetPicker = ({ alt = '' } = {}) => new Promise(resolve => {
+    const library = document.createElement('k-files-library');
+    library.selectable = true;
+    library.canUpload = true;   // uploading and then immediately using it is the common flow
+    library.kind = 'image';     // the caller is the image control; other kinds are a click away
+    library.style.minWidth = 'min(48rem, 80vw)';
+
+    /*
+      The dismissal paths overlap — a double-click confirms and then the dialog closes, firing
+      closeCallback too. Guarding here keeps the first answer.
+    */
+    let settled = false;
+    const settle = value => {
+      if(settled) return;
+      settled = true;
+      resolve(value);
+    };
+
+    const chosen = file => ({
+      /*
+        An aliased file gets its bare path, everything else its id URL. Both go through the same
+        permission gate server-side, so this only affects how the link reads — but a page that ends
+        up in front of a signed-out visitor needs the file to be public either way.
+      */
+      url: urlForFile(file),
+      // The file's own alt text describes it; fall back to whatever was already typed
+      alt: file.altText || alt
+    });
+
+    library.addEventListener('file-confirmed', e => {
+      settle(chosen(e.detail.file));
+      dialog?.close();
+    });
+
+    const dialog = Dialog.create(library, {
+      title: 'Select a file',
+      confirmText: 'Insert',
+      cancelText: 'Cancel',
+      confirmAction: event => {
+        const file = library.selectedFile;
+        if(!file){
+          // Nothing picked yet — keep the dialog up rather than silently inserting nothing
+          event.keepDialogOpen = true;
+          return;
+        }
+        settle(chosen(file));
+      },
+      // Fires on every dismissal route: cancel, the close button, the overlay, and Escape
+      closeCallback: () => settle(null)
+    });
+  });
+</script>
+</content>
