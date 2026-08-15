@@ -12,7 +12,7 @@ on:
 
 jobs:
   # kempo/kempo-ui/kempo-server resolve from the registry, which is what a site installing this
-  # extension gets. Peer dependencies are installed automatically by npm ci.
+  # extension gets.
   published:
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
     runs-on: ubuntu-latest
@@ -44,8 +44,12 @@ jobs:
       - run: npm ci
 
       # kempo/kempo-ui/kempo-server are peer dependencies, which npm ci does not install.
+      # legacy-peer-deps (set repo-wide in .npmrc, needed so npm ci doesn't ERESOLVE on the
+      # kempo/kempo-server dual-peer-path) also makes a bare `npm install <peer-name>` silently
+      # no-op instead of actually placing the package. --no-legacy-peer-deps forces a real
+      # install; --force is needed alongside it to get past that same ERESOLVE conflict.
       - name: Install the host for the test gate
-        run: npm install --no-save kempo@latest kempo-ui@latest kempo-server@latest
+        run: npm install --no-save --no-legacy-peer-deps --force kempo@latest kempo-ui@latest kempo-server@latest
 
       - name: Apply database schema
         run: npx drizzle-kit push --force
