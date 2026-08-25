@@ -1,5 +1,6 @@
 import { unlink } from 'fs/promises';
 import { eq } from 'drizzle-orm';
+import { triggerHook } from 'kempo/server/sdk.js';
 import db from 'kempo/server/db/index.js';
 import { kempoFile } from '../../db/schema.js';
 import { filePath } from '../paths.js';
@@ -37,6 +38,18 @@ export default async ({ id }) => {
   } catch {
     return [{ code: 500, msg: 'Could not remove the file record' }, null];
   }
+
+  /*
+    Notification, not a gate — the file is already gone, and there is nothing left to veto. This is
+    where anything that derived something *from* this file cleans up after itself: a generated
+    thumbnail, a cached transcode, an index entry. Without it those outlive their source silently,
+    and nothing ever comes looking for them again.
+
+    Deliberately not `file:before_delete`. Deleting is not refusable here the way an upload or a
+    download is: kempo-files has no undo, so a handler that threw would leave the bytes gone and the
+    row still present.
+  */
+  await triggerHook('file:deleted', { file: existing });
 
   return [null, { id }];
 };

@@ -112,6 +112,7 @@ Two groups ship ready to use: **kempo-files:contributor** (upload and manage you
 | `file:before_upload` | yes | Before a file is stored, or its contents replaced. Throw `{ code, msg }` to refuse it — this is where a site puts its own upload policy, e.g. no `.exe`. |
 | `file:uploaded` | no | After a file lands. Where a scanner or thumbnail generator picks it up. |
 | `file:before_download` | yes | Before any download, public or not. Throw `{ code, msg }` to block it. |
+| `file:deleted` | no | After a file is removed, with the row it had. Where anything *derived* from a file — a generated thumbnail, a cached transcode, an index entry — cleans up after itself. Not bail-capable: the bytes are already gone, and there is no undo to refuse into. |
 
 Handlers are awaited in sequence, so anything slow — an external API call, a model — should be started and left to run rather than awaited inline, or every upload waits for it.
 
