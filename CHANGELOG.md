@@ -6,6 +6,14 @@ All notable changes to `kempo-files` are documented in this file.
 
 ### Added
 
+- **Folder-tree reads on the SDK: `getDirectory`, `directoryAncestry` and `directorySubtree`.** Everything needed to *manipulate* folders was already exported; nothing let another extension ask where a folder sits. `directoryAncestry` returns the ancestry as whole rows, root-first, which is what makes "is this folder inside the subtree I own?" answerable by id rather than by comparing path strings — a path changes the moment anything above it is renamed, and two folders under different parents can share a name. `paths.js` already walked this chain internally but only ever needed the names.
+
+  `directorySubtree` collects a whole subtree one query per level rather than one per folder, for anything that has to size or empty one.
+
+  Written for [kempo-user-dirs](https://github.com/dustinpoissant/kempo-user-dirs), which resolves every request it receives through `directoryAncestry` before touching anything — that check is the whole basis of one member not being able to reach into another's folder.
+
+---
+
 First release. A file library for kempo that stores uploads in real folders under `files/` at the site root — a sibling of `public/`, never inside it — and serves every one of them through a permission-checked route rather than the static file scanner.
 
 - **Real directories.** Create, rename, move and delete folders, with real names on disk. Deleting a non-empty folder is refused rather than recursing, so one request cannot destroy an unbounded amount of other people's work.

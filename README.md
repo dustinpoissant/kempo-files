@@ -135,6 +135,16 @@ import { listFiles, storeUpload, filePath } from 'kempo-files/sdk';
 
 These are the data operations, with no permission checks of their own — the routes enforce who may do what, and anything calling in here is server-side code that has already decided it is allowed.
 
+Alongside the CRUD, three folder-tree reads exist for extensions that need to reason about *where* something is rather than what it is:
+
+| | |
+|---|---|
+| `getDirectory(id)` | One folder row |
+| `directoryAncestry(id)` | Its ancestry as whole rows, root-first, the folder itself last |
+| `directorySubtree(id)` | Every folder at or below it, one query per level rather than one per folder |
+
+`directoryAncestry` is how an extension answers "is this folder inside the subtree I own?" — by ids rather than by comparing path strings, which change the moment anything above them is renamed. `kempo-files/sdk`'s `directoryPath` walks the same chain but only ever needed the names, and two folders under different parents can share a name. `kempo-user-dirs` uses it for every containment check it makes.
+
 In the browser, served at `/kempo-files/sdk.js`:
 
 ```javascript
@@ -148,7 +158,7 @@ Both return `[error, data]` tuples, matching the rest of kempo.
 ## Deliberately out of scope
 
 - **Thumbnails.** No `sharp` dependency, no generation. Images preview from the original. A separate extension's job.
-- **A private per-user space.** Planned as its own extension built on this one.
+- **A private per-user space.** Its own extension built on this one: [kempo-user-dirs](https://github.com/dustinpoissant/kempo-user-dirs).
 - **Reference tracking.** Deleting a file does not check whether anything links to it. Doing that properly means understanding every extension's content, and guessing badly would be worse than being clear it does not happen.
 - **Streaming uploads.** Bodies are buffered in memory before a route runs, which is kempo-server's model. `max_upload_size_mb` (default 250) is the ceiling.
 

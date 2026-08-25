@@ -17,6 +17,7 @@ export { default as setFileTrust } from './server/utils/files/setFileTrust.js';
 export { default as deleteFile } from './server/utils/files/deleteFile.js';
 
 export { default as createDirectory } from './server/utils/directories/createDirectory.js';
+export { default as getDirectory, directoryAncestry, directorySubtree } from './server/utils/directories/getDirectory.js';
 export { default as listDirectories } from './server/utils/directories/listDirectories.js';
 export { default as updateDirectory } from './server/utils/directories/updateDirectory.js';
 export { default as deleteDirectory } from './server/utils/directories/deleteDirectory.js';
