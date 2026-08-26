@@ -64,6 +64,29 @@ const tests = {
     pass('trusted script executable');
   },
 
+  'an unreviewable script is neutralised even if it is somehow marked trusted': async ({ pass, fail }) => {
+    /*
+      The backstop. Every write path already refuses to set trusted on an unreviewable file, so
+      this state should be unreachable — which is exactly why it is worth asserting. A row edited
+      straight in the database, or restored from a backup taken before the flag existed, would
+      otherwise execute a member's upload on this site's origin.
+    */
+    const headers = headersFor({ name: 'members-upload.js', trusted: true, reviewable: false });
+    if(!headers['Content-Type'].startsWith('text/plain')) return fail(`served as ${headers['Content-Type']}`);
+    pass('unreviewable overrides trusted at the response');
+  },
+
+  'a file with no reviewable field behaves exactly as it did before the flag existed': async ({ pass, fail }) => {
+    /*
+      The column defaults to true, but headersFor is also called with plain objects — by this
+      extension's own callers and by kempo-user-dirs. If a missing field read as unreviewable, every
+      approved script on every existing site would silently stop executing on upgrade.
+    */
+    const headers = headersFor({ name: 'legacy.js', trusted: true });
+    if(headers['Content-Type'] !== 'text/javascript') return fail(`served as ${headers['Content-Type']}`);
+    pass('an absent flag is not the same as false');
+  },
+
   'an unreviewed SVG is not served as an image': async ({ pass, fail }) => {
     // SVG looks like an image and is a document that can carry <script>.
     const headers = headersFor({ name: 'vector.svg', trusted: false });

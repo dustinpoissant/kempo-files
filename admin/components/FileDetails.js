@@ -71,7 +71,9 @@ export default class FileDetails extends ShadowComponent {
         <div class="preview-pane bg-alt r ph mb">
           ${file.trusted
             ? html`<iframe src=${url} title=${file.name}></iframe>`
-            : html`<p class="tc-muted ta-center m0">PDF preview is available once this file is approved — served as a download until then.</p>`}
+            : html`<p class="tc-muted ta-center m0">${file.reviewable === false
+                ? 'PDF preview is not available — this file was stored on a user\'s behalf and is always served as a download.'
+                : 'PDF preview is available once this file is approved — served as a download until then.'}</p>`}
         </div>
       `;
     }
@@ -107,7 +109,7 @@ export default class FileDetails extends ShadowComponent {
             <tr><th>Type</th><td>${file.kind}</td></tr>
             <tr><th>Size</th><td>${formatBytes(file.sizeBytes)}</td></tr>
             <tr><th>Access</th><td>${file.public ? 'Public — anyone can download it' : 'Private — requires permission'}</td></tr>
-            <tr><th>Status</th><td>${file.trusted ? 'Trusted — served as its real type' : 'Unreviewed — served as plain text'}</td></tr>
+            <tr><th>Status</th><td>${statusText(file)}</td></tr>
             <tr><th>API</th><td><code>${apiUrlForFile(file)}</code></td></tr>
             <tr>
               <th>Alias</th>
@@ -139,5 +141,15 @@ export default class FileDetails extends ShadowComponent {
     td { min-width: 0; overflow-wrap: anywhere; vertical-align: top; }
   `;
 }
+
+/*
+  Three states. "Unreviewed" implies somebody will get to it; for a file stored on a user's behalf
+  nobody ever will, and saying so is what stops an admin going looking for the Approve button that
+  is deliberately not there.
+*/
+const statusText = file => {
+  if(file.reviewable === false) return 'Not up for review — stored on a user\'s behalf, always served as plain text';
+  return file.trusted ? 'Trusted — served as its real type' : 'Unreviewed — served as plain text';
+};
 
 customElements.define('k-files-file-details', FileDetails);

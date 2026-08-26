@@ -24,6 +24,7 @@ export default async ({
   ownerId,
   trusted = false,
   public: isPublic = false,
+  reviewable = true,
   maxBytes,
 }) => {
   const [nameError, validName] = sanitizeName(name);
@@ -78,7 +79,13 @@ export default async ({
     kind: kindForName(validName),
     altText,
     public: Boolean(isPublic),
-    trusted: Boolean(trusted),
+    /*
+      An unreviewable file can never be trusted, whatever the caller passed. Enforced here as well
+      as in setFileTrust so the two flags cannot be made to contradict each other at the one moment
+      the row is created.
+    */
+    trusted: Boolean(reviewable) && Boolean(trusted),
+    reviewable: Boolean(reviewable),
     alias: null,
     ownerId,
     createdAt: now,

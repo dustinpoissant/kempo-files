@@ -9,6 +9,8 @@ import deleteDirectory from '../server/utils/directories/deleteDirectory.js';
 import storeUpload from '../server/utils/files/storeUpload.js';
 import updateFile from '../server/utils/files/updateFile.js';
 import replaceFileContent from '../server/utils/files/replaceFileContent.js';
+import setFileTrust from '../server/utils/files/setFileTrust.js';
+import listFiles from '../server/utils/files/listFiles.js';
 import deleteFile from '../server/utils/files/deleteFile.js';
 import { filePath, displayPath, FILES_ROOT } from '../server/utils/paths.js';
 
@@ -331,6 +333,89 @@ const tests = {
       const rows = await db.select().from(kempoFile).where(like(kempoFile.name, `${PREFIX}doomed%`));
       if(rows.length) return fail('the row should be gone');
       pass('delete removes both');
+    } catch(e){ fail(e.message); } finally { await purge(); }
+  },
+
+  'an unreviewable file cannot be granted trust': async ({ pass, fail }) => {
+    /*
+      The point of the flag. An extension storing files on a user's behalf marks them unreviewable
+      precisely so that nobody — including an admin holding files:upload_trusted, working from the
+      library's own screens — can approve a member's upload into something that executes on this
+      site's origin.
+    */
+    try {
+      await purge();
+      const [, file] = await upload('members-upload.js', 'alert(1)', { reviewable: false });
+      if(file.reviewable !== false) return fail('setup: the file should have been stored unreviewable');
+
+      const [error] = await setFileTrust({ id: file.id, trusted: true });
+      if(!error) return fail('an unreviewable file was approved');
+      if(error.code !== 409) return fail(`expected a 409, got ${error.code}`);
+
+      const [reloaded] = await db.select().from(kempoFile).where(like(kempoFile.name, `${PREFIX}members-upload%`));
+      if(reloaded.trusted) return fail('the flag was written despite the refusal');
+      pass('approval is refused outright');
+    } catch(e){ fail(e.message); } finally { await purge(); }
+  },
+
+  'storing an unreviewable file ignores a trusted flag passed alongside it': async ({ pass, fail }) => {
+    // The two must not be settable together at the one moment no later check would ever see.
+    try {
+      await purge();
+      const [, file] = await upload('contradiction.js', 'x', { reviewable: false, trusted: true });
+      if(file.trusted) return fail('a file was stored both unreviewable and trusted');
+      pass('the contradiction resolves in favour of safety');
+    } catch(e){ fail(e.message); } finally { await purge(); }
+  },
+
+  'withdrawing trust is still allowed on an unreviewable file': async ({ pass, fail }) => {
+    /*
+      Making a file *less* dangerous should never be refused — otherwise a row that reached this
+      state through some path nobody anticipated could not be cleaned up.
+    */
+    try {
+      await purge();
+      const [, file] = await upload('legacy.js', 'x', { reviewable: false });
+      await db.update(kempoFile).set({ trusted: true }).where(like(kempoFile.name, `${PREFIX}legacy%`));
+
+      const [error] = await setFileTrust({ id: file.id, trusted: false });
+      if(error) return fail(`withdrawing trust was refused: ${error.msg}`);
+
+      const [reloaded] = await db.select().from(kempoFile).where(like(kempoFile.name, `${PREFIX}legacy%`));
+      if(reloaded.trusted) return fail('trust was not withdrawn');
+      pass('the gate is one-way');
+    } catch(e){ fail(e.message); } finally { await purge(); }
+  },
+
+  'unreviewable files stay out of the review queue': async ({ pass, fail }) => {
+    /*
+      Without this, a site with a per-user file space buries its actual review work under every
+      document its members ever uploaded, and the queue never reaches zero.
+    */
+    try {
+      await purge();
+      await upload('needs-looking-at.js', 'x');
+      await upload('someones-document.js', 'x', { reviewable: false });
+
+      const [error, data] = await listFiles({ awaitingReview: true, limit: 100 });
+      if(error) return fail(error.msg);
+
+      const names = data.files.map(file => file.name);
+      if(!names.includes(`${PREFIX}needs-looking-at.js`)) return fail('a genuinely unreviewed file went missing from the queue');
+      if(names.includes(`${PREFIX}someones-document.js`)) return fail('an unreviewable file appeared in the review queue');
+      pass('the queue shows only work somebody can actually do');
+    } catch(e){ fail(e.message); } finally { await purge(); }
+  },
+
+  'files default to reviewable, so nothing existing changes behaviour': async ({ pass, fail }) => {
+    try {
+      await purge();
+      const [, file] = await upload('ordinary.js', 'x');
+      if(file.reviewable !== true) return fail('an ordinary upload should still be up for review');
+
+      const [error] = await setFileTrust({ id: file.id, trusted: true });
+      if(error) return fail(`approving an ordinary file was refused: ${error.msg}`);
+      pass('the library keeps working exactly as before');
     } catch(e){ fail(e.message); } finally { await purge(); }
   },
 };

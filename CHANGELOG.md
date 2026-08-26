@@ -6,6 +6,16 @@ All notable changes to `kempo-files` are documented in this file.
 
 ### Added
 
+- **A `reviewable` flag on files, for content that should never be approved at all.** The trusted flag has always had two states — approved, and not-yet-approved — and both assume somebody will eventually look. That is right for site content and wrong for anything stored on a *user's* behalf: nobody is ever going to review a member's private documents, and approving one of their `.js` uploads would let it execute on the site's own origin.
+
+  `storeUpload({ ..., reviewable: false })` marks a file outside the idea of approval entirely. It stays out of the **Needs review** queue, `setFileTrust` refuses it with a 409 from any route for anybody, and `headersFor` serves it as inert text even if the trusted flag somehow got set regardless — a row edited straight in the database, or restored from a backup taken before this existed. Withdrawing trust stays allowed, since making a file less dangerous should never be refused.
+
+  There is deliberately no route that flips it. Only the code that stores the file decides, because a flag an admin could clear and then approve would not be a guarantee.
+
+  The admin reflects all three states: an unreviewable file shows *Not up for review* rather than the red *Unreviewed* warning, its per-card approve toggle and entry-menu item are hidden, its details dialog loses the Approve button, and the bulk Approve/Reject controls disable themselves rather than reporting success over files the server refused.
+
+  Defaults to true and is added by `update.js` as `NOT NULL DEFAULT true`, so every file that already exists keeps behaving exactly as it did. Built for [kempo-user-dirs](https://github.com/dustinpoissant/kempo-user-dirs), which sets it on everything a member uploads.
+
 - **Folder-tree reads on the SDK: `getDirectory`, `directoryAncestry` and `directorySubtree`.** Everything needed to *manipulate* folders was already exported; nothing let another extension ask where a folder sits. `directoryAncestry` returns the ancestry as whole rows, root-first, which is what makes "is this folder inside the subtree I own?" answerable by id rather than by comparing path strings — a path changes the moment anything above it is renamed, and two folders under different parents can share a name. `paths.js` already walked this chain internally but only ever needed the names.
 
   `directorySubtree` collects a whole subtree one query per level rather than one per folder, for anything that has to size or empty one.

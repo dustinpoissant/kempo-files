@@ -8,8 +8,16 @@ export default class TcRejectSelected extends TableControl {
     if(!this.hasAttribute('title')) this.title = 'Reject Selected';
   }
 
+  /*
+    Same subset as Approve. Withdrawing trust from a file that could never have it is a no-op the
+    server accepts silently, which would report "3 files rejected" over files nothing changed for.
+  */
+  get selectionCount(){
+    return this.reviewableFiles.length;
+  }
+
   handleAction(){
-    const ids = this.selectedFiles.map(file => file.id);
+    const ids = this.reviewableFiles.map(file => file.id);
     if(!ids.length) return;
     this.dispatchEvent(new CustomEvent('reject', { detail: { ids }, bubbles: true, composed: true }));
   }

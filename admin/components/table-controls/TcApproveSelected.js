@@ -12,8 +12,16 @@ export default class TcApproveSelected extends TableControl {
     if(!this.hasAttribute('title')) this.title = 'Approve Selected';
   }
 
+  /*
+    Counts only files that can actually be approved, so the button disables itself when a selection
+    holds nothing but user-stored files rather than claiming to have approved them.
+  */
+  get selectionCount(){
+    return this.reviewableFiles.length;
+  }
+
   handleAction(){
-    const ids = this.selectedFiles.map(file => file.id);
+    const ids = this.reviewableFiles.map(file => file.id);
     if(!ids.length) return;
     this.dispatchEvent(new CustomEvent('approve', { detail: { ids }, bubbles: true, composed: true }));
   }

@@ -33,6 +33,25 @@ The real question is not *what type is this* but *did somebody decide this is sa
 
 Only users holding `files:upload_trusted` can set the flag. Everyone else can upload freely; their files just arrive unreviewed.
 
+### Files that are never up for review
+
+Everything uploaded through the library is site content somebody might reference from a page, so reviewing it makes sense. But an extension can store files on behalf of **users** — a private per-user space, a form attachment, anything member-supplied — and for those, approval is not merely unnecessary, it is dangerous: approving an arbitrary member's `.js` would let it execute on your site's own origin.
+
+So `storeUpload` takes a `reviewable` flag, defaulting to true:
+
+```javascript
+await storeUpload({ name, data, ownerId, reviewable: false });
+```
+
+A file marked unreviewable is a one-way gate, not a filter:
+
+- it never appears in the **Needs review** queue, so a site with a per-user file space doesn't bury its real review work under every document its members ever uploaded
+- `setFileTrust` refuses to grant it trust — with a 409, from any route, for anybody
+- it is served as inert text **at the response** even if the trusted flag somehow got set anyway (a row edited in the database, a restore from a backup taken before the flag existed)
+- the admin shows it as *Not up for review* rather than *Unreviewed*, and hides every approve control for it
+
+Withdrawing trust is still allowed — making a file less dangerous is never refused. There is deliberately **no route that flips the flag**: only the code that stores the file decides, because a flag an admin could clear and then approve would not be a guarantee.
+
 Serving untrusted source as plain text also *is* the review mechanism — an unreviewed file's own URL shows its source safely, so there is no separate code viewer to build. The admin has a **Needs review** filter for finding them.
 
 **Trust does not survive a content replacement by an untrusted writer.** Replace an approved file's bytes and, unless you personally hold `files:upload_trusted`, it drops back to unreviewed — regardless of who owns it. Otherwise approval would be a one-time thing you could get and then quietly swap out from under.

@@ -39,6 +39,23 @@ export const kempoFile = pgTable('kempoFile', {
   trusted: boolean('trusted').notNull().default(false),
 
   /*
+    reviewable: whether approving this file is a question worth asking at all.
+
+    Everything uploaded through the library is site content somebody might reference from a page,
+    so reviewing it makes sense and the default is true. But an extension can store files on behalf
+    of *users* — a private per-user space, a form attachment, anything member-supplied — and for
+    those, approval is not merely unnecessary, it is dangerous: approving an arbitrary member's
+    `.js` would let it execute on this site's own origin.
+
+    So this is a one-way gate rather than a filter. A file marked unreviewable never appears in the
+    Needs review queue, cannot be granted trust (setFileTrust.js), and is never served as its real
+    executable type even if the flag somehow got set anyway (serving/resolveDownload.js). Only the
+    code that stores the file can decide this — there is no route that flips it, because a flag an
+    admin could clear and then approve would not be a guarantee.
+  */
+  reviewable: boolean('reviewable').notNull().default(true),
+
+  /*
     alias: an optional second URL for a public file, so it can be referenced at a path that looks
     like a real file rather than an API endpoint. Resolved through the route:unmatched hook, which
     runs the same gate as the id-based route — an alias is a lookup key, never a bypass.

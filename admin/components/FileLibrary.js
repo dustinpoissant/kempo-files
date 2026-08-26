@@ -395,6 +395,9 @@ export default class FileLibrary extends ShadowComponent {
   };
 
   toggleTrusted = async file => {
+    if(file.reviewable === false){
+      return Toast.error('This file is not up for review — it was stored on a user\'s behalf and can never be approved to run');
+    }
     const [error, data] = await updateFile({ id: file.id, trusted: !file.trusted });
     if(error) return Toast.error(error.msg);
     Toast.success(data.file.trusted ? 'Approved — this file can now run in the browser' : 'Approval withdrawn');
@@ -474,7 +477,7 @@ export default class FileLibrary extends ShadowComponent {
   */
   openDetails(file) {
     // Reviewing is the point of opening details on something unapproved — put the action right there.
-    const canApprove = this.canTrust && !file.trusted;
+    const canApprove = this.canTrust && !file.trusted && file.reviewable !== false;
 
     let $dialog;
     $dialog = Dialog.create(
@@ -494,6 +497,14 @@ export default class FileLibrary extends ShadowComponent {
     same thing without a separate badge fighting the thumbnail for space.
   */
   statusIcon(file) {
+    /*
+      Three states, not two. An unreviewable file is not "unreviewed" — nobody is ever going to
+      review it, so the red warning would be nagging about work that does not exist. Muted and
+      neutral says the right thing: this one is not your problem.
+    */
+    if(file.reviewable === false){
+      return html`<k-icon name="lock" class="tc-muted" title="Not up for review — stored on a user's behalf, always served as plain text"></k-icon>`;
+    }
     return file.trusted
       ? html`<k-icon name="star_filled" class="tc-success" title="Trusted — approved to run in the browser"></k-icon>`
       : html`<k-icon name="warning" class="tc-danger" title="Unreviewed — served as plain text until approved"></k-icon>`;

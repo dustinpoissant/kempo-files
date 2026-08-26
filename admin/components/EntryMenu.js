@@ -58,7 +58,7 @@ export default class EntryMenu extends ShadowComponent {
           <button data-value="move">Move to…</button>
           <button data-value="public">${entry.public ? 'Make private' : 'Make public'}</button>
           ${entry.public ? html`<button data-value="alias">${entry.alias ? 'Edit alias…' : 'Set alias…'}</button>` : ''}
-          ${this.canTrust ? html`<button data-value="trust">${entry.trusted ? 'Withdraw approval' : 'Approve to run'}</button>` : ''}
+          ${this.canTrust && entry.reviewable !== false ? html`<button data-value="trust">${entry.trusted ? 'Withdraw approval' : 'Approve to run'}</button>` : ''}
           <button data-value="delete" class="tc-danger">Delete…</button>
         `}
       </k-dropdown>

@@ -58,7 +58,16 @@ export default async ({
       filters.push(directoryId === null ? isNull(kempoFile.directoryId) : eq(kempoFile.directoryId, directoryId));
     }
     if(kind) filters.push(eq(kempoFile.kind, kind));
-    if(awaitingReview) filters.push(eq(kempoFile.trusted, false));
+
+    /*
+      Files nobody can approve are not "awaiting" anything, so they stay out of the review queue —
+      otherwise a site with a per-user file space would bury its actual review work under every
+      document its members ever uploaded, and the queue would never reach zero.
+    */
+    if(awaitingReview){
+      filters.push(eq(kempoFile.trusted, false));
+      filters.push(eq(kempoFile.reviewable, true));
+    }
     if(search){
       const term = `%${search}%`;
       filters.push(or(ilike(kempoFile.name, term), ilike(kempoFile.altText, term)));

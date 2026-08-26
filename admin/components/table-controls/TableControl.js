@@ -36,6 +36,15 @@ export default class TableControl extends ButtonControl {
     return this.selectedRecords.filter(record => record._type === 'file');
   }
 
+  /*
+    The subset approve/reject act on. A file stored on a user's behalf can never be approved, so
+    including it would mean a bulk approve reported success over files the server refused — and
+    selecting a folder of them would leave the button enabled with nothing it could actually do.
+  */
+  get reviewableFiles(){
+    return this.selectedFiles.filter(record => record.reviewable !== false);
+  }
+
   get selectionCount(){
     return this.selectedFiles.length;
   }

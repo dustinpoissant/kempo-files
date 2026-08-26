@@ -57,7 +57,14 @@ export default async (file, request) => {
 export const headersFor = file => {
   const realType = mimeForName(file.name);
 
-  if(file.trusted){
+  /*
+    An unreviewable file is never served as its real executable type, whatever its trusted flag
+    says. Every write path already refuses to set the two together, so this is the backstop for the
+    cases no write path saw: a row edited straight in the database, a restore from a backup taken
+    before the flag existed, a future code path that forgets. The guarantee is only worth anything
+    if it holds at the response, which is the one place it actually matters.
+  */
+  if(file.trusted && file.reviewable !== false){
     /*
       Vouched for: served as what it is, so a script referenced with <script src> actually runs.
       kempo-server's own default security headers send every response out as X-Frame-Options: DENY,

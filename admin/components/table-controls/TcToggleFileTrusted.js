@@ -7,9 +7,19 @@ import '/kempo-ui/components/Icon.js';
   cancel means "not reviewed yet", matching statusIcon()'s own current-state convention elsewhere.
 */
 export default class TcToggleFileTrusted extends CardControl {
+  /*
+    Hidden entirely on a file nobody can approve, on top of CardControl's own file-only hiding. A
+    disabled toggle would still be asking a question that has no answer — the file is not pending
+    approval, it is outside the idea of approval altogether.
+  */
+  willUpdate(changed){
+    super.willUpdate?.(changed);
+    if(!this.hidden) this.hidden = this.record?.reviewable === false;
+  }
+
   handleAction(){
     const record = this.record;
-    if(!record) return;
+    if(!record || record.reviewable === false) return;
     this.dispatchEvent(new CustomEvent('toggle-trusted', { detail: { id: record.id, record }, bubbles: true, composed: true }));
   }
 
