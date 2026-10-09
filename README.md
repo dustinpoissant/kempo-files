@@ -58,6 +58,19 @@ Serving untrusted source as plain text also *is* the review mechanism — an unr
 
 ---
 
+## Serving: range, caching, no login
+
+Every download goes out through kempo-server's own file server, so a gated file behaves like a static one:
+
+- **No login for public files.** A file with `public` set is served to anyone. Nothing else about the request is checked beyond the `file:before_download` hook.
+- **HTTP Range.** `Range: bytes=…` answers `206` with `Content-Range` and `Accept-Ranges: bytes`, so video and audio seek.
+- **Real content types** for everything that is safe to render (see *Trusted files*).
+- **Caching.** A public file carries `Cache-Control: public, max-age=3600` plus an `ETag` and `Last-Modified`, and a conditional request (`If-None-Match`, `If-Modified-Since`) gets a bodiless `304`. Anything not public is `private, no-cache`. The gate always runs first, so a `304` is only ever answered to someone who would have been allowed the file. Replacing a file's bytes changes its validators, so a replaced public file can be served stale for at most that hour by a browser that cached it without revalidating.
+
+The stable public URL is `/kempo-files/api/files/<id>` (or the alias). An id does not change when a file is renamed or moved.
+
+---
+
 ## Aliases
 
 The canonical URL for a file is `/kempo-files/api/files/<id>`, which is fine for an `<img>` but reads like plumbing. A **public** file can also be given an alias — a real-looking path it is additionally served at:
@@ -163,6 +176,16 @@ Alongside the CRUD, three folder-tree reads exist for extensions that need to re
 | `directorySubtree(id)` | Every folder at or below it, one query per level rather than one per folder |
 
 `directoryAncestry` is how an extension answers "is this folder inside the subtree I own?" — by ids rather than by comparing path strings, which change the moment anything above them is renamed. `kempo-files/sdk`'s `directoryPath` walks the same chain but only ever needed the names, and two folders under different parents can share a name. `kempo-user-dirs` uses it for every containment check it makes.
+
+Server-side code that stores a file for somebody and wants the rest of the site to see it should use `uploadFile` rather than `storeUpload`:
+
+```javascript
+import { uploadFile } from 'kempo-files/sdk';
+
+const [error, file] = await uploadFile({ name: 'hero.png', data, ownerId, public: true });
+```
+
+It fires `file:before_upload` first (a hook can refuse it), stores the file, then fires `file:uploaded` — which is what makes kempo-thumbs generate its thumbnails. `storeUpload` alone fires neither; those hooks live in the upload route. Both accept an optional `id`, for a caller that already uses the id as its own key (kempo-media keeps a media asset's id and its file's id the same). `uploadFile` falls back to `max_upload_size_mb` when `maxBytes` is not given.
 
 In the browser, served at `/kempo-files/sdk.js`:
 

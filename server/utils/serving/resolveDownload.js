@@ -1,3 +1,4 @@
+import { stat } from 'fs/promises';
 import { currentUserHasPermission, triggerHook } from 'kempo/server/sdk.js';
 import { mimeForName, servingClass } from '../names/fileTypes.js';
 import { filePath } from '../paths.js';
@@ -9,8 +10,8 @@ import { filePath } from '../paths.js';
   to look a file up, never a second set of rules. If this were implemented twice, the two would
   drift and one of them would end up serving something the other would have refused.
 
-  Returns [error, { filePath, headers }]. It never touches the response — the id route writes the
-  result directly, and the alias handler copies it onto the route:unmatched draft.
+  Returns [error, { filePath, headers, notModified }]. It never touches the response — the id route
+  writes the result directly, and the alias handler copies it onto the route:unmatched draft.
 */
 export default async (file, request) => {
   /*
@@ -44,7 +45,36 @@ export default async (file, request) => {
   const [pathError, absolute] = await filePath(file);
   if(pathError) return [pathError, null];
 
-  return [null, { filePath: absolute, headers: headersFor(file) }];
+  /*
+    Validators and a cache lifetime, so a page full of thumbnails is not refetched on every visit.
+    This runs after the gate, never instead of it: a 304 is only ever answered to somebody the gate
+    already let through, and a file that stops being public stops answering at all.
+
+    A public file may be cached by anyone for an hour. Anything else is marked private, and has to
+    revalidate each time so a shared cache can never hand it to somebody the gate would refuse.
+    Replacing a file's contents changes its validators, so the worst a stale public copy can do is
+    outlive a replacement by that hour.
+  */
+  const headers = headersFor(file);
+  headers['Cache-Control'] = file.public ? 'public, max-age=3600' : 'private, no-cache';
+
+  let notModified = false;
+  try {
+    const { size, mtime } = await stat(absolute);
+    const etag = `W/"${size.toString(16)}-${Math.floor(mtime.getTime()).toString(16)}"`;
+    headers.ETag = etag;
+    headers['Last-Modified'] = mtime.toUTCString();
+
+    const ifNoneMatch = request.headers?.['if-none-match'];
+    const ifModifiedSince = Date.parse(request.headers?.['if-modified-since']);
+    notModified = ifNoneMatch
+      ? ifNoneMatch.split(',').map(tag => tag.trim()).some(tag => tag === etag || tag === '*')
+      : Number.isFinite(ifModifiedSince) && Math.floor(mtime.getTime() / 1000) <= Math.floor(ifModifiedSince / 1000);
+  } catch {
+    // Missing from disk: serving it fails the same way it always did, just without validators
+  }
+
+  return [null, { filePath: absolute, headers, notModified }];
 };
 
 /*

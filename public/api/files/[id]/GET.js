@@ -19,5 +19,11 @@ export default async (request, response) => {
   if(gateError) return response.status(gateError.code).json({ error: gateError.msg });
 
   const { 'Content-Type': contentType, ...headers } = resolved.headers;
+
+  if(resolved.notModified){
+    response.writeHead(304, headers);
+    return response.end();
+  }
+
   await serveStaticFile(resolved.filePath, request, response, {}, undefined, { contentType, headers });
 };

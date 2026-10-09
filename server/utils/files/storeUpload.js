@@ -17,6 +17,7 @@ import { directoryPath } from '../paths.js';
   someone linked to is not the file they uploaded.
 */
 export default async ({
+  id = null,
   name,
   data,
   directoryId = null,
@@ -29,6 +30,17 @@ export default async ({
 }) => {
   const [nameError, validName] = sanitizeName(name);
   if(nameError) return [nameError, null];
+
+  /*
+    A caller can pick the id when another record already uses it as its own key (kempo-media keeps
+    a media asset's id and its file's id the same, so nothing needs a mapping table). It is held to
+    the shape generated ids have, since the id ends up in URLs and is never a path segment on disk.
+  */
+  if(id !== null && !/^[a-zA-Z0-9_-]{1,64}$/.test(id)) return [{ code: 400, msg: 'That file id is not valid' }, null];
+  if(id !== null){
+    const [taken] = await db.select({ id: kempoFile.id }).from(kempoFile).where(eq(kempoFile.id, id));
+    if(taken) return [{ code: 409, msg: 'A file with that id already exists' }, null];
+  }
 
   if(!ownerId) return [{ code: 400, msg: 'An owner is required' }, null];
   if(!Buffer.isBuffer(data)) return [{ code: 400, msg: 'File content is required' }, null];
@@ -73,7 +85,7 @@ export default async ({
 
   const now = new Date();
   const row = {
-    id: crypto.randomBytes(8).toString('hex'),
+    id: id ?? crypto.randomBytes(8).toString('hex'),
     name: validName,
     directoryId,
     kind: kindForName(validName),

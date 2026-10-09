@@ -9,6 +9,7 @@
 */
 
 export { default as storeUpload } from './server/utils/files/storeUpload.js';
+export { default as uploadFile } from './server/utils/files/uploadFile.js';
 export { default as getFile, getFileByAlias } from './server/utils/files/getFile.js';
 export { default as listFiles, listRecentFiles } from './server/utils/files/listFiles.js';
 export { default as updateFile } from './server/utils/files/updateFile.js';

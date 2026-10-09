@@ -6,6 +6,12 @@ All notable changes to `kempo-files` are documented in this file.
 
 ### Added
 
+- **Caching for downloads.** A public file is now served with `Cache-Control: public, max-age=3600`, an `ETag` and `Last-Modified`, and a conditional request gets a `304` with no body, both on the id route and through an alias. Anything not public is `private, no-cache`. Before, nothing carried a cache header, so a page of thumbnails refetched every image on every visit. The permission gate and the `file:before_download` hook still run first, so a `304` can only go to somebody who would have been allowed the bytes. Found while checking that kempo-media could sit on top of this extension; range requests, content types and anonymous access to public files were already right, and now have tests.
+
+- **`uploadFile` on the SDK**: `storeUpload` plus the `file:before_upload` veto and `file:uploaded` notification the upload route fires. Server-side callers that used `storeUpload` directly skipped both, so nothing could refuse their uploads and kempo-thumbs never saw the file.
+
+- **`storeUpload({ id })`** accepts a caller-chosen id (letters, digits, `_` and `-`, up to 64; a taken id is a 409), for an extension whose own records are keyed by the file id.
+
 - **A `reviewable` flag on files, for content that should never be approved at all.** The trusted flag has always had two states — approved, and not-yet-approved — and both assume somebody will eventually look. That is right for site content and wrong for anything stored on a *user's* behalf: nobody is ever going to review a member's private documents, and approving one of their `.js` uploads would let it execute on the site's own origin.
 
   `storeUpload({ ..., reviewable: false })` marks a file outside the idea of approval entirely. It stays out of the **Needs review** queue, `setFileTrust` refuses it with a 409 from any route for anybody, and `headersFor` serves it as inert text even if the trusted flag somehow got set regardless — a row edited straight in the database, or restored from a backup taken before this existed. Withdrawing trust stays allowed, since making a file less dangerous should never be refused.

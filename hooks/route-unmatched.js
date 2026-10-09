@@ -41,8 +41,16 @@ export default async ({ url, draft, request }) => {
     return;
   }
 
-  draft.status = 200;
-  draft.filePath = resolved.filePath;
   Object.assign(draft.headers, resolved.headers);
   draft.handled = true;
+
+  // Handled with a status and no body or file, which is how kempo writes a bare 304
+  if(resolved.notModified){
+    draft.status = 304;
+    delete draft.headers['Content-Type'];
+    return;
+  }
+
+  draft.status = 200;
+  draft.filePath = resolved.filePath;
 };
