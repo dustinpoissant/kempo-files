@@ -5,6 +5,21 @@
   "hooks": {
     "route:unmatched": "./hooks/route-unmatched.js"
   },
+  "widgets": [
+    {
+      "key": "overview",
+      "title": "Files",
+      "description": "How many files and folders there are, and how much space they use.",
+      "icon": "file",
+      "element": "k-files-widget",
+      "module": "/kempo-files/components/FilesWidget.js",
+      "defaultWidth": 2,
+      "defaultHeight": 1,
+      "minWidth": 1,
+      "permission": "files:browse",
+      "priority": 70
+    }
+  ],
   "permissions": [
     { "name": "files:browse", "description": "List and view files in the library" },
     { "name": "files:upload", "description": "Upload new files and replace the contents of existing ones" },
