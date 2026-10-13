@@ -1,4 +1,5 @@
 {
+  "git": "https://github.com/dustinpoissant/kempo-files",
   "docs": "https://github.com/dustinpoissant/kempo-files#readme",
   "public-scope": "kempo-files",
   "schema": "./server/db/schema.js",
