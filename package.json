@@ -3,7 +3,7 @@
   "version": "0.1.12",
   "description": "File library extension for kempo — upload, organize and serve arbitrary files through a permission-gated API",
   "license": "MIT",
-  "author": "Dustin Poissant",
+  "author": "Dustin Poissant <dustinpoissant@gmail.com>",
   "type": "module",
   "main": "sdk.js",
   "scripts": {
