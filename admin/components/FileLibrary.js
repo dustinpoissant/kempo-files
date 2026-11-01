@@ -74,7 +74,8 @@ export default class FileLibrary extends ShadowComponent {
     loading: { type: Boolean, state: true },
     dragging: { type: Boolean, state: true },
     uploading: { type: Array, state: true },
-    selectedId: { type: String, state: true },
+    multiple: { type: Boolean },
+    selection: { type: Array, state: true },
   };
 
   constructor() {
@@ -95,11 +96,13 @@ export default class FileLibrary extends ShadowComponent {
     this.loading = true;
     this.dragging = false;
     this.uploading = [];
-    this.selectedId = '';
+    this.multiple = false;
+    this.selection = [];
   }
 
   connectedCallback() {
     super.connectedCallback();
+    this.tabIndex = -1;
     this.loadDirectories();
     this.load();
   }
@@ -156,13 +159,18 @@ export default class FileLibrary extends ShadowComponent {
   }
 
   get selectedFile() {
-    return this.files.find(file => file.id === this.selectedId) || null;
+    return this.selection[this.selection.length - 1] || null;
   }
+
+  get selectedFiles() {
+    return this.selection;
+  }
+
+  isSelected = file => this.selection.some(selected => selected.id === file.id);
 
   openDirectory = id => {
     this.directoryId = id || '';
     this.offset = 0;
-    this.selectedId = '';
     this.load();
   };
 
@@ -437,12 +445,28 @@ export default class FileLibrary extends ShadowComponent {
   };
 
   /*
-    In the picker a click selects; in the admin it opens the file's details instead.
+    In the picker a click selects; in the admin it opens the file's details instead. With `multiple`,
+    ctrl/cmd-click toggles one file and shift-click selects the run between the last click and this
+    one. Focus moves to the library itself, otherwise it stays on whatever the dialog focused first.
   */
-  handleActivate = file => {
+  handleActivate = (file, event) => {
     if(!this.selectable) return this.openDetails(file);
-    this.selectedId = file.id;
-    this.dispatchEvent(new CustomEvent('file-selected', { detail: { file }, bubbles: true, composed: true }));
+    if(this.multiple && event?.shiftKey && this.selection.length){
+      const from = this.files.findIndex(candidate => candidate.id === this.selectedFile.id);
+      const to = this.files.findIndex(candidate => candidate.id === file.id);
+      if(from !== -1 && to !== -1){
+        const run = this.files.slice(Math.min(from, to), Math.max(from, to) + 1);
+        this.selection = [...this.selection.filter(selected => !run.some(file => file.id === selected.id)), ...run];
+      } else {
+        this.selection = [...this.selection, file];
+      }
+    } else if(this.multiple && (event?.ctrlKey || event?.metaKey)){
+      this.selection = this.isSelected(file) ? this.selection.filter(selected => selected.id !== file.id) : [...this.selection, file];
+    } else {
+      this.selection = [file];
+    }
+    this.focus();
+    this.dispatchEvent(new CustomEvent('file-selected', { detail: { file, files: this.selection }, bubbles: true, composed: true }));
   };
 
   /*
@@ -607,8 +631,8 @@ export default class FileLibrary extends ShadowComponent {
     return html`
       <div
         class="tile-body"
-        style=${`cursor:pointer;${this.selectedId === record.id ? ' outline:2px solid var(--c_primary);' : ''}`}
-        @click=${() => this.handleActivate(record)}
+        style="cursor:pointer; position:relative;"
+        @click=${event => this.handleActivate(record, event)}
         @dblclick=${() => { if(this.selectable) this.dispatchEvent(new CustomEvent('file-confirmed', { detail: { file: record }, bubbles: true, composed: true })); }}
       >
         <div class="bg-alt" style="position:relative; aspect-ratio:4/3; display:grid; place-items:center; overflow:hidden;">
@@ -622,6 +646,7 @@ export default class FileLibrary extends ShadowComponent {
             <code class="small">/${record.alias}</code>
           </div>
         ` : ''}
+        ${this.isSelected(record) ? html`<div style="position:absolute; inset:0; border:3px solid var(--c_primary); pointer-events:none;"></div>` : ''}
       </div>
     `;
   };
@@ -656,6 +681,7 @@ export default class FileLibrary extends ShadowComponent {
       this.viewMode,
       directories.map(directory => directory.id),
       files.map(file => [file.id, file.name, file.public, file.trusted, file.alias, file.directoryId]),
+      this.selection.map(file => file.id),
     ]);
     if(signature === this._recordsSignature) return;
 
@@ -678,7 +704,7 @@ export default class FileLibrary extends ShadowComponent {
             name: 'name', label: 'Name', size: 320,
             calculator: record => record._type === 'directory'
               ? html`<button class="no-btn link" @click=${() => this.openDirectory(record.id)}>${record.name}</button>`
-              : html`<button class="no-btn link" title=${record.path || record.name} @click=${() => this.handleActivate(record)}>${record.name}</button>`,
+              : html`<button class="no-btn link" title=${record.path || record.name} @click=${event => this.handleActivate(record, event)}>${this.isSelected(record) ? html`<k-icon name="check"></k-icon> ` : ''}${record.name}</button>`,
           },
           { name: 'kind', label: 'Type', size: 100, calculator: record => record._type === 'directory' ? 'Folder' : record.kind },
           {

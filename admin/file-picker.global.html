@@ -14,12 +14,14 @@
 
   window.kempo = window.kempo || {};
 
-  window.kempo.openAssetPicker = ({ alt = '' } = {}) => new Promise(resolve => {
+  window.kempo.openAssetPicker = ({ alt = '', kind = '', multiple = false } = {}) => new Promise(resolve => {
     const library = document.createElement('k-files-library');
     library.selectable = true;
     library.canUpload = true;   // uploading and then immediately using it is the common flow
-    library.kind = 'image';     // the caller is the image control; other kinds are a click away
+    library.kind = kind || 'image';
+    library.multiple = multiple;
     library.style.minWidth = 'min(48rem, 80vw)';
+    library.style.padding = '1rem';
 
     /*
       The dismissal paths overlap — a double-click confirms and then the dialog closes, firing
@@ -44,7 +46,8 @@
     });
 
     library.addEventListener('file-confirmed', e => {
-      settle(chosen(e.detail.file));
+      const file = chosen(e.detail.file);
+      settle(multiple ? [file] : file);
       dialog?.close();
     });
 
@@ -53,13 +56,14 @@
       confirmText: 'Insert',
       cancelText: 'Cancel',
       confirmAction: event => {
-        const file = library.selectedFile;
-        if(!file){
+        const files = library.selectedFiles;
+        if(!files.length){
           // Nothing picked yet — keep the dialog up rather than silently inserting nothing
           event.keepDialogOpen = true;
           return;
         }
-        settle(chosen(file));
+        const results = files.map(chosen);
+        settle(multiple ? results : results[0]);
       },
       // Fires on every dismissal route: cancel, the close button, the overlay, and Escape
       closeCallback: () => settle(null)
