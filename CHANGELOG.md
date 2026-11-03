@@ -61,3 +61,8 @@ First release. A file library for kempo that stores uploads in real folders unde
 - `kempo-server >= 3.3.0` for the public `serve-static-file` export.
 - `kempo >= 4.2.26` for the video/audio/model3d/archive/font icons in its shared icon set. `kempo` with `route:unmatched` support for aliases. Everything else works without it.
 - `kempo-ui` with `CardGrid` and the `Dropdown`/`Table` fixes described in kempo-ui's own CHANGELOG (both added alongside this release) — `CardGrid` for the grid view itself, and the `Dropdown` fix for the per-card actions menu (built on kempo-ui's own `kc-menu`) to open, close and keyboard-navigate correctly with real `ButtonControl` items instead of plain buttons.
+
+### Changed
+
+- The `kempo-ui` peer dependency is now `>=1.0.0`.
+- The `kempo` peer dependency is now `>=4.10.2`.
