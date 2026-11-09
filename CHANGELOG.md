@@ -4,8 +4,14 @@ All notable changes to `kempo-files` are documented in this file.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-09
+
+Requires kempo 4.11.0 or later.
+
 ### Added
 
+- **A file's address ends with its extension.** The canonical URL is `/kempo-files/api/files/<id>.mp3` rather than `/kempo-files/api/files/<id>`, so a page, a player or a builder can tell a sound from a picture by the address alone. The id route ignores the extension, so every address made before this still works. Restart the server for it to take effect.
+- **`<k-files-upload>`, an upload component other extensions can use.** A dashed area to drop files on or click to open the file picker (kempo-ui's new `<k-dropzone>`) with a progress bar for each file, served at `/kempo-files/components/FilesUpload.js`. It takes `accept`, `multiple`, `public`, `directory-id`, `label` and `disabled`, fires `uploaded` and `uploadfailed` for each file, and has an `uploader` property so an extension that makes more than a file of each upload (kempo-media) can keep the same interface. Needs a kempo-ui that has `<k-dropzone>`.
 - **The file picker takes a `kind` and `multiple`.** `window.kempo.openAssetPicker({ kind, multiple })` opens the library on that kind of file (image by default), and with `multiple` several files can be chosen and the picker resolves to a list. Kempo's page builder uses it for the Photo viewer's gallery and for its Image, Video, Audio and File pickers. In the library, a click selects a file, Ctrl or Shift adds more, and each selected file shows a ring.
 - **Dashboard widget.** A **Files** widget on the kempo admin dashboard showing file and folder counts and total storage, with a **Upload files** button, declared in `widgets` in `kempo-config.json`. Needs a kempo with the dashboard; ignored on older versions.
 - **Caching for downloads.** A public file is now served with `Cache-Control: public, max-age=3600`, an `ETag` and `Last-Modified`, and a conditional request gets a `304` with no body, both on the id route and through an alias. Anything not public is `private, no-cache`. Before, nothing carried a cache header, so a page of thumbnails refetched every image on every visit. The permission gate and the `file:before_download` hook still run first, so a `304` can only go to somebody who would have been allowed the bytes. Found while checking that kempo-media could sit on top of this extension; range requests, content types and anonymous access to public files were already right, and now have tests.
@@ -65,4 +71,4 @@ First release. A file library for kempo that stores uploads in real folders unde
 ### Changed
 
 - The `kempo-ui` peer dependency is now `>=1.0.0`.
-- The `kempo` peer dependency is now `>=4.10.2`.
+- The `kempo` peer dependency is now `>=4.11.0`.

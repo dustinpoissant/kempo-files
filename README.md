@@ -197,6 +197,27 @@ Both return `[error, data]` tuples, matching the rest of kempo.
 
 ---
 
+## Upload component
+
+`<k-files-upload>` is a ready-made way to upload files from any extension's page: a dashed area to drop files on, or click to open the file picker (kempo-ui's `<k-dropzone>`), and a progress bar for each file while it goes up.
+
+```html
+<script type="module" src="/kempo-files/components/FilesUpload.js"></script>
+<k-files-upload multiple accept="image/*,video/*" public directory-id="..."></k-files-upload>
+```
+
+| Attribute | |
+|---|---|
+| `accept` | What it takes, as a file input's `accept` (`image/*`, `.pdf`, `video/mp4`). Drops are checked too. |
+| `multiple` | Take more than one file. |
+| `public` | Upload the files as public (no login to download). |
+| `directory-id` | The folder to upload into. |
+| `label`, `disabled` | The text in the area; switch it off. |
+
+It fires `uploaded` for each file that is up (`detail: { file, result }`) and `uploadfailed` for each that is not (`detail: { file, error }`), both bubbling and composed. A failure, and a file whose type is not accepted, is also shown under the area.
+
+Files go to kempo-files one after another. An extension whose files are more than plain files sets the `uploader` property: a function `(file, report) => [error, result]` (`report(fraction)` takes 0 to 1). kempo-media does this to make a media asset of each file, and then everything else, the area, the progress and the events, is the same.
+
 ## Deliberately out of scope
 
 - **Thumbnails.** No `sharp` dependency, no generation. Images preview from the original. A separate extension's job.

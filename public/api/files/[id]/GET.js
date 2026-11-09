@@ -12,7 +12,9 @@ import resolveDownload from '../../../../server/utils/serving/resolveDownload.js
   it is worth reusing rather than reimplementing.
 */
 export default async (request, response) => {
-  const [lookupError, file] = await getFile(request.params?.id);
+  /* The address may end with the file's extension (see sdk.js); the id is what comes before it. */
+  const id = String(request.params?.id ?? '').replace(/\.[a-z0-9]{1,10}$/i, '');
+  const [lookupError, file] = await getFile(id);
   if(lookupError) return response.status(lookupError.code).json({ error: lookupError.msg });
 
   const [gateError, resolved] = await resolveDownload(file, request);

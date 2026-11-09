@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test</title>
+  <!--
+    public/components/FilesUpload.js imports kempo-ui and kempo-files' own sdk by the absolute addresses the site serves them
+    at. The test framework's static server has no such routing, so they are mapped here: kempo-ui to its built copy, and
+    /kempo-files/ to this package's public folder. As in table-controls/test-page.html, there is no script here on purpose.
+  -->
+  <script type="importmap">
+    { "imports": { "/kempo-ui/": "/node_modules/kempo-ui/dist/", "/kempo-files/": "/public/" } }
+  </script>
+</head>
+<body></body>
+</html>

@@ -51,8 +51,16 @@ export const urlForFile = file => (file.alias ? `/${file.alias}` : apiUrlForFile
 /*
   The canonical API URL, which keeps working whether or not an alias exists and regardless of what
   the alias is later changed to. Worth showing alongside the alias rather than instead of it.
+
+  It ends with the file's extension (`/files/<id>.mp3`), so anything reading the address, such as a
+  page builder deciding a sound from a picture, can tell them apart. The id route ignores it, so the
+  bare id URL (made before this) keeps working.
 */
-export const apiUrlForFile = file => `${BASE}/files/${file.id}`;
+const extensionOf = file => {
+  const match = /\.([a-z0-9]{1,10})$/i.exec(file.name ?? '');
+  return match ? `.${match[1].toLowerCase()}` : '';
+};
+export const apiUrlForFile = file => `${BASE}/files/${file.id}${extensionOf(file)}`;
 
 export const listFiles = (params = {}) => request(`/files${query(params)}`);
 
